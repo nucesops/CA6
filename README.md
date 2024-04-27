@@ -24,7 +24,9 @@ Create rest of the stages manualy named, process and train and run it
 
 `dvc repro`
 
+Commit the code to github to store the snapshot of the current development.
 
+Lets add github actions to the repro to 
 
 
 
