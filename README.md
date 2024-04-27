@@ -14,7 +14,17 @@ Create a training script for ML, This script will run on the pulled data.
 
 In this part we want to see the effect of the new method by comparing the results across different branches.
 
-## DVC pipeline makes it easy for us
+## DVC pipeline 
+
+DVC pipeline provides a way to achieve it easily. Lets create a stage of dvc
+
+`dvc stage add  -n get_data -d get_data.py -o data_raw.csv --no-exec python get_data.py`
+
+Create rest of the stages manualy named, process and train and run it 
+
+`dvc repro`
+
+
 
 
 
