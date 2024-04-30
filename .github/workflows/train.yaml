@@ -3,47 +3,52 @@ name: DVC Tracking with Github Actions
 on: [push]
 
 jobs:
-  run:
+  compare_metrics_and_create_pr:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Ensures all history and branches are fetched
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          sudo apt-get update
+          sudo apt-get install -y jq
 
       - name: Reproduce DVC pipeline
         run: dvc repro
 
-      - name: Fetch changes
-        run: git fetch --prune
-
-      - name: Checkout main branch and compare metrics
-        run: |
-          git fetch origin main:main
-          dvc metrics show -a > metrics_all_branches.txt
-          echo "Metrics from all branches have been saved."
-      
-      - name: Extract accuracy from metrics.json in current branch
+      - name: Get current branch accuracy
         id: current_metrics
         run: |
-          ACCURACY_CURRENT=$(jq '.metrics.accuracy' metrics.json)
+          ACCURACY_CURRENT=$(jq '.accuracy' metrics.json)
           echo "Current branch accuracy: $ACCURACY_CURRENT"
-          echo "ACCURACY_CURRENT=$ACCURACY_CURRENT" >> $GITHUB_ENV
+          echo "::set-output name=accuracy::$ACCURACY_CURRENT"
 
-      - name: Extract accuracy from metrics.json in main branch
+      - name: Checkout main branch and get accuracy
         id: main_metrics
         run: |
+          git fetch origin main
           git checkout main
-          ACCURACY_MAIN=$(jq '.metrics.accuracy' metrics.json)
+          ACCURACY_MAIN=$(jq '.accuracy' metrics.json)
           echo "Main branch accuracy: $ACCURACY_MAIN"
-          echo "ACCURACY_MAIN=$ACCURACY_MAIN" >> $GITHUB_ENV
+          echo "::set-output name=accuracy::$ACCURACY_MAIN"
 
-      - name: Check if current branch has higher accuracy and create PR
-        if: env.ACCURACY_CURRENT > env.ACCURACY_MAIN
-        uses: repo-sync/pull-request@v2
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          pr_title: "Update main branch with higher accuracy model"
-          pr_body: "This pull request updates the main branch with a more accurate model from this branch."
-          destination_branch: "main"
-          source_branch: "${{ github.ref }}"
+      - name: Compare accuracies and create PR if current is higher
+        if: ${{ steps.current_metrics.outputs.accuracy > steps.main_metrics.outputs.accuracy }}
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git checkout -b auto-pr-update-main-$(date +%Y%m%d%H%M%S)
+          git push origin HEAD
+          echo "Creating a pull request..."
+          gh pr create --base main --head $(git branch --show-current) --title "Update main branch with higher accuracy model" --body "This PR is opened automatically to merge improvements in model accuracy into the main branch."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
