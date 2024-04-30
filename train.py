@@ -11,6 +11,9 @@ import json
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.impute import SimpleImputer
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neural_network import MLPClassifier
+
 
 df = pd.read_csv("data_processed.csv")
 
@@ -29,7 +32,7 @@ X = imp.transform(X)
 
 
 # Linear model
-clf = SVC()
+clf = MLPClassifier(hidden_layer_sizes=(100,100,100), max_iter=500, alpha=0.0001, solver='adam', verbose=10,  random_state=21,tol=0.000000001)
 yhat = cross_val_predict(clf, X, y, cv=5)
 
 acc = np.mean(yhat==y)

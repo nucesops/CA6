@@ -1,5 +1,6 @@
 name: DVC Tracking with Github Actions
 
+on: [push]
 on:
   push:
     branches:
