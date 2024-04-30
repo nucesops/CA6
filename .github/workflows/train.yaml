@@ -1,13 +1,49 @@
 name: DVC Tracking with Github Actions
+
 on: [push]
+
 jobs:
   run:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Running_updates
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Reproduce DVC pipeline
+        run: dvc repro
+
+      - name: Fetch changes
+        run: git fetch --prune
+
+      - name: Checkout main branch and compare metrics
         run: |
-          pip install -r requirements.txt
-          dvc repro
-          git fetch --prune
-          dvc metrics diff main
+          git fetch origin main:main
+          dvc metrics show -a > metrics_all_branches.txt
+          echo "Metrics from all branches have been saved."
+      
+      - name: Extract accuracy from metrics.json in current branch
+        id: current_metrics
+        run: |
+          ACCURACY_CURRENT=$(jq '.metrics.accuracy' metrics.json)
+          echo "Current branch accuracy: $ACCURACY_CURRENT"
+          echo "ACCURACY_CURRENT=$ACCURACY_CURRENT" >> $GITHUB_ENV
+
+      - name: Extract accuracy from metrics.json in main branch
+        id: main_metrics
+        run: |
+          git checkout main
+          ACCURACY_MAIN=$(jq '.metrics.accuracy' metrics.json)
+          echo "Main branch accuracy: $ACCURACY_MAIN"
+          echo "ACCURACY_MAIN=$ACCURACY_MAIN" >> $GITHUB_ENV
+
+      - name: Check if current branch has higher accuracy and create PR
+        if: env.ACCURACY_CURRENT > env.ACCURACY_MAIN
+        uses: repo-sync/pull-request@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          pr_title: "Update main branch with higher accuracy model"
+          pr_body: "This pull request updates the main branch with a more accurate model from this branch."
+          destination_branch: "main"
+          source_branch: "${{ github.ref }}"
