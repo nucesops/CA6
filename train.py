@@ -7,10 +7,12 @@ from sklearn.model_selection import cross_val_predict
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_curve
 from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
 import json
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.impute import SimpleImputer
+from sklearn.tree import DecisionTreeClassifier
 
 df = pd.read_csv("data_processed.csv")
 
@@ -29,7 +31,7 @@ X = imp.transform(X)
 
 
 # Linear model
-clf = SVC()
+clf = DecisionTreeClassifier()
 yhat = cross_val_predict(clf, X, y, cv=5)
 
 acc = np.mean(yhat==y)
