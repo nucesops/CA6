@@ -20,13 +20,13 @@ DVC pipeline provides a way to achieve it easily. Lets create a stage of dvc
 
 `dvc stage add  -n get_data -d get_data.py -o data_raw.csv --no-exec python get_data.py`
 
-Create rest of the stages manualy named, process and train and run it 
+Create rest of the stages manualy named, "process" and "train" and run it 
 
 `dvc repro`
 
 Commit the code to github to store the snapshot of the current development.
 
-Lets add github actions to the repro to 
+Lets add github actions to the repro to atuomate the above process. 
 
 
 
