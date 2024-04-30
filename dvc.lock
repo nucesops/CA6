@@ -42,5 +42,5 @@ stages:
     outs:
     - path: by_region.png
       hash: md5
-      md5: c2a95c5f305b8fd29cf9860ff75c7d3d
+      md5: ac863c0d15bb5cf99af1e142f2fb82cb
       size: 7922
