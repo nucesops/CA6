@@ -1,7 +1,7 @@
 schema: '2.0'
 stages:
   get_data:
-    cmd: python get_data.py
+    cmd: python3 get_data.py
     deps:
     - path: get_data.py
       hash: md5
@@ -13,7 +13,7 @@ stages:
       md5: b427a8c0156e79f12e418b08cde43c7e
       size: 68868
   process:
-    cmd: python process_data.py
+    cmd: python3 process_data.py
     deps:
     - path: data_raw.csv
       hash: md5
@@ -29,7 +29,7 @@ stages:
       md5: 03269b6c0a766dc80e090326008765b3
       size: 24227
   train:
-    cmd: python train.py
+    cmd: python3 train.py
     deps:
     - path: data_processed.csv
       hash: md5
@@ -37,10 +37,10 @@ stages:
       size: 24227
     - path: train.py
       hash: md5
-      md5: 32fa3666e4484359ac994743fce1c453
-      size: 1484
+      md5: 4b322e42ae4f81ed5deaf5f547aa6cf7
+      size: 1499
     outs:
     - path: by_region.png
       hash: md5
-      md5: ac863c0d15bb5cf99af1e142f2fb82cb
-      size: 7922
+      md5: e86eae41dbf2357035c7162828c366f2
+      size: 7900
