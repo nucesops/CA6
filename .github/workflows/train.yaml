@@ -1,13 +1,64 @@
 name: DVC Tracking with Github Actions
-on: [push]
+
+on:
+  push:
+    branches:
+      - '*'
+      - '!main'
+
 jobs:
-  run:
+  compare_metrics_and_create_pr:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Running_updates
+      - name: Checkout code of the current branch
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Ensures all history and branches are fetched
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          dvc repro
-          git fetch --prune
-          dvc metrics diff main
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Reproduce DVC pipeline
+        run: dvc repro
+
+      - name: Save current branch accuracy
+        id: current_metrics
+        run: |
+          ACCURACY_CURRENT=$(jq '.accuracy' metrics.json)
+          echo "Current branch accuracy: $ACCURACY_CURRENT"
+          echo "::set-output name=accuracy_current::$ACCURACY_CURRENT"
+
+      - name: Add worktree for main branch
+        run: |
+          git worktree add ../main-worktree main
+
+      - name: Get accuracy from main branch metrics
+        id: main_metrics
+        run: |
+          ACCURACY_MAIN=$(jq '.accuracy' ../main-worktree/metrics.json)
+          echo "Main branch accuracy: $ACCURACY_MAIN"
+          echo "::set-output name=accuracy_main::$ACCURACY_MAIN"
+
+      - name: Remove main branch worktree
+        run: |
+          git worktree remove ../main-worktree
+
+      - name: Compare accuracies and create PR if current is higher
+        if: ${{ steps.current_metrics.outputs.accuracy_current > steps.main_metrics.outputs.accuracy_main }}
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git checkout -b auto-pr-update-main-$(date +%Y%m%d%H%M%S)
+          git push origin HEAD
+          echo "Creating a pull request..."
+          gh pr create --base main --head $(git branch --show-current) --title "Update main branch with higher accuracy model" --body "This PR is opened automatically to merge improvements in model accuracy into the main branch."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
