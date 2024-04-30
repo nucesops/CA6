@@ -1,6 +1,11 @@
 name: DVC Tracking with Github Actions
 
 on: [push]
+on:
+  push:
+    branches:
+      - '*'
+      - '!main'
 
 jobs:
   compare_metrics_and_create_pr:
